@@ -1,24 +1,29 @@
 //imports for transmitter 
-#include <RH_ASK.h>
-#include <SPI.h> 
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
 
 // defines pins numbers
-const int trigPin = 10;
-const int echoPin = 11;
-int ledPin = 13;
-RH_ASK driver(2000, 2, 4, 5); // speed, receivePin, transmitPin, push-to-talk
+const int trigPin = 3;
+const int echoPin = 2;
+RF24 radio(7, 8); // CE, CSN
 
 // defines variables
 long duration;
 int distanceCm, distanceInch;
+const byte address[6] = "00001";
+char text[32];
+
 void setup()
 {
-  pinMode(ledPin, OUTPUT); // ard led 
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT);  // Sets the echoPin as an Input
   Serial.begin(9600);       // Starts the serial communication
-  if (!driver.init())
-         Serial.println("init failed");
+  
+  radio.begin();
+  radio.openWritingPipe(address);
+  radio.setPALevel(RF24_PA_MIN);
+  radio.stopListening();
 }
 void loop()
 {
@@ -33,25 +38,25 @@ void loop()
   
   // Reads the echoPin, returns the sound wave travel time in microseconds
   duration = pulseIn(echoPin, HIGH);
+  
   // Calculating the distance
   distanceCm= duration*0.034/2;
   distanceInch = duration*0.0133/2;
 
 
   // will run until tranmission finishes sending
-  digitalWrite(ledPin, HIGH);
-
-  const char * msg = distanceCm;
   
-  driver.send((uint8_t *)msg, strlen(msg));
-  driver.waitPacketSent();
-  
+ //const char text[] = "Hello World";  
+  //String distStr = String(distanceCm);
+  itoa(distanceCm, text, 10);
+  Serial.println(distanceCm);
+ //radio.write(&text, sizeof(text));
+ radio.write(&text, sizeof(text));
 //  // Prints the distance on the Serial Monitor
 //  Serial.print("DistanceCM: ");
 //  Serial.println(distanceCm);
 
   //transmission finished
-  digitalWrite(ledPin, LOW);
 
   delay(1000);
 //  LowPower.deepSleep(1000);
